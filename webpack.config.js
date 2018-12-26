@@ -1,7 +1,8 @@
 var path = require('path');
 
 module.exports = {
-    entry: './src/main/js/app.js',
+    context: path.resolve(__dirname, 'src/main/js'),
+    entry: './app.js',
     devtool: 'sourcemaps',
     cache: true,
     mode: 'development',
@@ -12,7 +13,7 @@ module.exports = {
     module: {
         rules: [
             {
-                test: path.join(__dirname, '.'),
+                test: /\.js?$/,
                 exclude: /(node_modules)/,
                 use: [{
                     loader: 'babel-loader',
@@ -20,6 +21,9 @@ module.exports = {
                         presets: ["@babel/preset-env", "@babel/preset-react"]
                     }
                 }]
+            }, {
+                test: /\.css$/,
+                use: [ 'style-loader', 'css-loader' ]
             }
         ]
     }

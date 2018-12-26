@@ -1,68 +1,84 @@
-'use strict';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { Alert, Button, Form, FormGroup, Input, Label } from 'reactstrap';
 
-// tag::vars[]
-const React = require('react');
-const ReactDOM = require('react-dom');
-const client = require('./client');
-// end::vars[]
+class ShortenResult extends React.Component {
+    constructor(props) {
+        super(props);
+        this.copyToClipboard = this.copyToClipboard.bind(this);
+    }
 
-// tag::app[]
+    copyToClipboard(e) {
+        var t = document.createElement("textarea");
+        document.body.appendChild(t);
+        t.value = this.props.shortenUrl;
+        t.select();
+        document.execCommand('copy');
+        document.body.removeChild(t);
+        alert('Copied!');
+    }
+
+    render() {
+        return (
+            <div className="result">
+                <Alert color="success">{ this.props.shortenUrl }</Alert>
+                <Button onClick={this.copyToClipboard}>Copy to Clipboard</Button>
+            </div>
+        );
+    }
+}
+
 class App extends React.Component {
+    constructor() {
+        super();
 
-	constructor(props) {
-		super(props);
-		this.state = {employees: []};
-	}
+        this.handleChange = this.handleChange.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.state = {
+            targetUrl: null,
+            shortenUrl: null
+        }
+    }
 
-	componentDidMount() {
-		client({method: 'GET', path: '/api/employees'}).done(response => {
-			this.setState({employees: response.entity._embedded.employees});
-		});
-	}
+    handleChange(e) {
+        this.setState({
+            targetUrl: e.target.value
+        })
+    }
 
-	render() {
-		return (
-			<EmployeeList employees={this.state.employees}/>
-		)
-	}
+    handleSubmit(e) {
+        e.preventDefault();
+        var data = {
+            "targetUrl": this.state.targetUrl
+        }
+
+        console.log(JSON.stringify(data));
+
+        fetch('/shortenURL/create', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data),
+        }).then(response => response.json())
+        .then(data => {
+            console.log(JSON.stringify(data));
+            this.setState({shortenUrl : data.shortenUrl});
+        });
+    }
+
+    render() {
+        return <div className="main">
+            <Form onSubmit={this.handleSubmit}>
+                <FormGroup>
+                    <Label for="targetUrl">Shorten URL</Label>
+                    <Input type="URL" name="targetUrl" value={this.state.targetUrl} onChange={this.handleChange} placeholder="input URL" />
+                </FormGroup>
+                <Button>Submit</Button>
+                { this.state.shortenUrl ? <ShortenResult shortenUrl={this.state.shortenUrl}/> : null }
+            </Form>
+        </div>;
+    }
 }
-// end::app[]
-
-// tag::employee-list[]
-class EmployeeList extends React.Component{
-	render() {
-		const employees = this.props.employees.map(employee =>
-			<Employee key={employee._links.self.href} employee={employee}/>
-		);
-		return (
-			<table>
-				<tbody>
-					<tr>
-						<th>First Name</th>
-						<th>Last Name</th>
-						<th>Description</th>
-					</tr>
-					{employees}
-				</tbody>
-			</table>
-		)
-	}
-}
-// end::employee-list[]
-
-// tag::employee[]
-class Employee extends React.Component{
-	render() {
-		return (
-			<tr>
-				<td>{this.props.employee.firstName}</td>
-				<td>{this.props.employee.lastName}</td>
-				<td>{this.props.employee.description}</td>
-			</tr>
-		)
-	}
-}
-// end::employee[]
 
 // tag::render[]
 ReactDOM.render(
